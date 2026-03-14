@@ -1,0 +1,72 @@
+id: org.meshtastic.desktop
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk17
+command: java -jar Meshtastic.jar
+
+finish-args:
+  - --share=ipc
+  # Allow the app to communicate with the X server
+  - --socket=x11
+  # Required for CH341 USB radio
+  - --device=all
+  # Needs network access
+  - --share=network
+  # Allow bluetooth if available
+  - --allow=bluetooth
+  # Set env for OpenJDK
+  - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
+  - --env=JAVA_HOME=/app/jre
+
+modules:
+  - name: openjdk
+    buildsystem: simple
+    build-commands:
+      - /usr/lib/sdk/openjdk17/install.sh
+
+  - name: meshtastic-desktop
+    buildsystem: simple
+    build-options:
+      env:
+        PATH: /app/bin:/usr/bin:/usr/lib/sdk/openjdk17/bin
+        JAVA_HOME: /usr/lib/sdk/openjdk17/jvm/openjdk-17
+    build-commands:
+      - gradle --offline :desktop:packageUberJarForCurrentOS
+      - install -Dm755 desktop/build/compose/jars/Meshtastic-linux-x64-1.0.0.jar /app/bin/Meshtastic.jar
+    sources:
+      - type: git
+        url: https://github.com/vidplace7/Meshtastic-Android.git
+        # url: https://github.com/meshtastic/Meshtastic-Android.git
+        # tag: v2.7.13
+        # commit: 7a68802bc2b8cdb9c76a77f2093aac130fc8ec05
+        commit: b3b2e97e911f51d5ce151527ff3316c63c3ce050
+        # x-checker-data:
+        #   is-main-source: true
+        #   type: json
+        #   url: https://api.github.com/repos/meshtastic/Meshtastic-Android/releases/latest
+        #   timestamp-query: .published_at
+        #   tag-query: .tag_name
+        #   version-query: $tag | sub("^v"; "")
+      - flatpak-sources.json
+    modules:
+      - name: gradle
+        buildsystem: simple
+        cleanup:
+          - '*.bat'
+        sources:
+          - type: file
+            url: https://services.gradle.org/distributions/gradle-9.4.0-bin.zip
+            dest-filename: gradle-bin.zip
+            sha256: 60ea723356d81263e8002fec0fcf9e2b0eee0c0850c7a3d7ab0a63f2ccc601f3
+            x-checker-data:
+              type: json
+              url: https://services.gradle.org/versions/current
+              is-main-source: false
+              version-query: .version
+              url-query: .downloadUrl
+        build-commands:
+          - unzip -q gradle-bin.zip -d $FLATPAK_DEST
+          - mv $FLATPAK_DEST/gradle-* $FLATPAK_DEST/gradle
+          - ln -s $FLATPAK_DEST/gradle/bin/gradle $FLATPAK_DEST/bin
