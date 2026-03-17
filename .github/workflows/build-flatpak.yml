@@ -1,0 +1,26 @@
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v6
+        - name: Install Flatpak Builder
+          run: |
+            sudo apt update
+            sudo apt install -y flatpak-builder
+        - name: Build .flatpak
+          run: |
+            flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+            flatpak-builder --user --repo=repo --install-deps-from=flathub --force-clean builddir org.meshtastic.desktop.yaml
+        - name: Export .flatpak bundle
+          run: |
+            flatpak build-bundle repo org.meshtastic.desktop.flatpak org.meshtastic.desktop --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+        - name: Upload .flatpak
+          uses: actions/upload-artifact@v7
+          with:
+            name: meshtastic-desktop-flatpak
+            path: org.meshtastic.desktop.flatpak
