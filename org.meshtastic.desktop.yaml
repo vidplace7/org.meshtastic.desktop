@@ -4,7 +4,7 @@ runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.openjdk17
-command: java -jar Meshtastic.jar
+command: meshtastic-wrapper.sh
 
 finish-args:
   - --share=ipc
@@ -26,30 +26,54 @@ modules:
     build-commands:
       - /usr/lib/sdk/openjdk17/install.sh
 
+  - name: meshtastic-wrapper
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 meshtastic-wrapper.sh /app/bin/meshtastic-wrapper.sh
+    sources:
+      - type: file
+        path: meshtastic-wrapper.sh
+
   - name: meshtastic-desktop
     buildsystem: simple
     build-options:
+      build-args:
+        # Allow internet access at build time (big no-no on FlatHub)
+        - --share=network
       env:
         PATH: /app/bin:/usr/bin:/usr/lib/sdk/openjdk17/bin
         JAVA_HOME: /usr/lib/sdk/openjdk17/jvm/openjdk-17
     build-commands:
-      - gradle --offline :desktop:packageUberJarForCurrentOS
-      - install -Dm755 desktop/build/compose/jars/Meshtastic-linux-x64-1.0.0.jar /app/bin/Meshtastic.jar
+      # Install desktop metadata
+      - install -Dm644 -t /app/share/icons/hicolor/scalable/apps org.meshtastic.desktop.svg
+      - install -Dm644 -t /app/share/applications org.meshtastic.desktop.desktop
+      - install -Dm644 -t /app/share/metainfo org.meshtastic.desktop.metainfo.xml
+      # Build!
+      - ./gradlew :desktop:packageUberJarForCurrentOS
+      - >
+        JAR_FILE=$(find desktop/build/compose/jars/ -name "*.jar" -type f | head -1)
+        && install -Dm755 "$JAR_FILE" /app/lib/meshtastic-desktop.jar
     sources:
+      - type: file
+        path: org.meshtastic.desktop.desktop
+      - type: file
+        path: org.meshtastic.desktop.metainfo.xml
+      - type: file
+        path: org.meshtastic.desktop.svg
       - type: git
-        url: https://github.com/vidplace7/Meshtastic-Android.git
-        # url: https://github.com/meshtastic/Meshtastic-Android.git
-        # tag: v2.7.13
-        # commit: 7a68802bc2b8cdb9c76a77f2093aac130fc8ec05
-        commit: b3b2e97e911f51d5ce151527ff3316c63c3ce050
-        # x-checker-data:
-        #   is-main-source: true
-        #   type: json
-        #   url: https://api.github.com/repos/meshtastic/Meshtastic-Android/releases/latest
-        #   timestamp-query: .published_at
-        #   tag-query: .tag_name
-        #   version-query: $tag | sub("^v"; "")
-      - flatpak-sources.json
+        # url: https://github.com/vidplace7/Meshtastic-Android.git
+        # commit: b3b2e97e911f51d5ce151527ff3316c63c3ce050
+        url: https://github.com/meshtastic/Meshtastic-Android.git
+        tag: v2.7.14-closed.3
+        commit: 9ad28e924f40e0e093abefce25c2f3bd5d4ad931
+        x-checker-data:
+          is-main-source: true
+          type: json
+          url: https://api.github.com/repos/meshtastic/Meshtastic-Android/releases/latest
+          timestamp-query: .published_at
+          tag-query: .tag_name
+          version-query: $tag | sub("^v"; "")
+      # - flatpak-sources.json
     modules:
       - name: gradle
         buildsystem: simple
