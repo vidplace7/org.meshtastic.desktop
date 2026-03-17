@@ -14,8 +14,11 @@ finish-args:
   - --device=all
   # Needs network access
   - --share=network
+  # Status tray / noficiations support
+  - --talk-name=org.kde.StatusNotifierWatcher
   # Allow bluetooth if available
   - --allow=bluetooth
+  - --system-talk-name=org.bluez.*
   # Set env for OpenJDK
   - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
   - --env=JAVA_HOME=/app/jre
