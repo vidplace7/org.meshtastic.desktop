@@ -27,10 +27,22 @@ finish-args:
   - --env=JAVA_HOME=/app/jre
 
 modules:
-  - name: openjdk
+  - name: jbr
     buildsystem: simple
     build-commands:
-      - /usr/lib/sdk/openjdk17/install.sh
+      - mkdir -p /app/jre
+      - tar xzf jbr*.tar.gz -C /app/jre --strip-components=1
+    sources:
+      - type: file
+        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr_jcef-17.0.12-linux-x64-b1207.37.tar.gz
+        sha256: fd9e3dc7eb93e4a26dbe1635ce05bf6f43b827a176feb201f8f1c82e48bd1944
+        only-arches:
+          - x86_64
+      - type: file
+        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr_jcef-17.0.12-linux-aarch64-b1207.37.tar.gz
+        sha256: 17a04f670f96f49b13627dc00bfc0a68ee74d2b3ff000f32283b43d1d9dc1105
+        only-arches:
+          - aarch64
 
   - name: meshtastic-wrapper
     buildsystem: simple
