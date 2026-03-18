@@ -10,12 +10,15 @@ finish-args:
   - --share=ipc
   # Allow the app to communicate with the X server
   - --socket=x11
+  # Enable Hardware Accel
+  - --device=dri
   # Required for CH341 USB radio
   - --device=all
   # Needs network access
   - --share=network
   # Status tray / noficiations support
   - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
   # Allow bluetooth if available
   - --allow=bluetooth
   - --system-talk-name=org.bluez.*
