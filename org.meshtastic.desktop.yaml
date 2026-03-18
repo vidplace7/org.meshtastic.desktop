@@ -82,8 +82,8 @@ modules:
         # url: https://github.com/vidplace7/Meshtastic-Android.git
         # commit: b3b2e97e911f51d5ce151527ff3316c63c3ce050
         url: https://github.com/meshtastic/Meshtastic-Android.git
-        tag: v2.7.14-closed.3
-        commit: 9ad28e924f40e0e093abefce25c2f3bd5d4ad931
+        tag: v2.7.14-closed.4
+        commit: 3263b0614fb75f1ecf5619117a68abec8fb76595
         x-checker-data:
           is-main-source: true
           type: json
