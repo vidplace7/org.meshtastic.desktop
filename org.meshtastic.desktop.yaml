@@ -55,17 +55,23 @@ modules:
   - name: meshtastic-desktop
     buildsystem: simple
     build-options:
+      append-path: "/usr/lib/sdk/openjdk17/bin"
       build-args:
         # Allow internet access at build time (big no-no on FlatHub)
         - --share=network
       env:
-        PATH: /app/bin:/usr/bin:/usr/lib/sdk/openjdk17/bin
         JAVA_HOME: /usr/lib/sdk/openjdk17/jvm/openjdk-17
     build-commands:
       # Install desktop metadata
       - install -Dm644 -t /app/share/icons/hicolor/scalable/apps org.meshtastic.desktop.svg
       - install -Dm644 -t /app/share/applications org.meshtastic.desktop.desktop
       - install -Dm644 -t /app/share/metainfo org.meshtastic.desktop.metainfo.xml
+      # Disable Gradle's auto-download and auto-detect of Java installations
+      - echo "org.gradle.java.installations.auto-detect=false" >> gradle.properties
+      - echo "org.gradle.java.installations.auto-download=false" >> gradle.properties
+      # Comment out the toolchainVendor=JETBRAINS line in the Gradle daemon JVM properties
+      # as it causes Gradle to fail when running with OpenJDK
+      - sed -i 's/^toolchainVendor=JETBRAINS/# toolchainVendor=JETBRAINS/' gradle/gradle-daemon-jvm.properties
       # Build!
       - ./gradlew :desktop:packageUberJarForCurrentOS
       - >
@@ -82,8 +88,8 @@ modules:
         # url: https://github.com/vidplace7/Meshtastic-Android.git
         # commit: b3b2e97e911f51d5ce151527ff3316c63c3ce050
         url: https://github.com/meshtastic/Meshtastic-Android.git
-        tag: v2.7.14-closed.3
-        commit: 9ad28e924f40e0e093abefce25c2f3bd5d4ad931
+        tag: v2.7.14-closed.7
+        commit: fa98d20256a8230a409ecc18fc9882aa78f20938
         x-checker-data:
           is-main-source: true
           type: json
