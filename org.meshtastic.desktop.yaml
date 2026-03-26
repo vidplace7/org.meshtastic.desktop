@@ -3,7 +3,7 @@ runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
-  - org.freedesktop.Sdk.Extension.openjdk17
+  - org.freedesktop.Sdk.Extension.openjdk21
 command: meshtastic-wrapper.sh
 
 finish-args:
@@ -16,7 +16,7 @@ finish-args:
   - --device=all
   # Needs network access
   - --share=network
-  # Status tray / noficiations support
+  # Status tray / notifications support
   - --talk-name=org.kde.StatusNotifierWatcher
   - --talk-name=org.freedesktop.Notifications
   # Allow bluetooth if available
@@ -31,18 +31,20 @@ modules:
     buildsystem: simple
     build-commands:
       - mkdir -p /app/jre
-      - tar xzf jbr*.tar.gz -C /app/jre --strip-components=1
+      - tar xzf jbr-*.tar.gz -C /app/jre --strip-components=1
     sources:
       - type: file
-        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr_jcef-17.0.12-linux-x64-b1207.37.tar.gz
-        sha256: fd9e3dc7eb93e4a26dbe1635ce05bf6f43b827a176feb201f8f1c82e48bd1944
+        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr-21.0.10-linux-x64-b1163.105.tar.gz
+        sha256: b6a3b13451d296140727bbde9325dd9ee422e2e9b2c6a9378f346f1b8d1111bc
         only-arches:
           - x86_64
       - type: file
-        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr_jcef-17.0.12-linux-aarch64-b1207.37.tar.gz
-        sha256: 17a04f670f96f49b13627dc00bfc0a68ee74d2b3ff000f32283b43d1d9dc1105
+        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr-21.0.10-linux-aarch64-b1163.105.tar.gz
+        sha256: 38804f526d869f5a9c49e9b90c04edcbc918b41e8e43264e5d5076d352a959bc
         only-arches:
           - aarch64
+  - shared-modules/libappindicator/libappindicator-gtk3-12.10.json
+  # - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json
 
   - name: meshtastic-wrapper
     buildsystem: simple
@@ -55,12 +57,12 @@ modules:
   - name: meshtastic-desktop
     buildsystem: simple
     build-options:
-      append-path: "/usr/lib/sdk/openjdk17/bin"
+      append-path: "/usr/lib/sdk/openjdk21/bin"
       build-args:
         # Allow internet access at build time (big no-no on FlatHub)
         - --share=network
       env:
-        JAVA_HOME: /usr/lib/sdk/openjdk17/jvm/openjdk-17
+        JAVA_HOME: /usr/lib/sdk/openjdk21/jvm/openjdk-21
     build-commands:
       # Install desktop metadata
       - install -Dm644 -t /app/share/icons/hicolor/scalable/apps org.meshtastic.desktop.svg
@@ -72,6 +74,21 @@ modules:
       # Comment out the toolchainVendor=JETBRAINS line in the Gradle daemon JVM properties
       # as it causes Gradle to fail when running with OpenJDK
       - sed -i 's/^toolchainVendor=JETBRAINS/# toolchainVendor=JETBRAINS/' gradle/gradle-daemon-jvm.properties
+      # Replace all occurrences of Java 17 with Java 21
+      - sed -i 's/^toolchainVersion=17$/toolchainVersion=21/' gradle/gradle-daemon-jvm.properties
+      - >
+        sed -i 's/JavaVersion\.VERSION_17/JavaVersion.VERSION_21/g'
+        build-logic/convention/build.gradle.kts
+        build-logic/convention/src/main/kotlin/org/meshtastic/buildlogic/KotlinAndroid.kt
+      - >
+        sed -i 's/JvmTarget\.JVM_17/JvmTarget.JVM_21/g'
+        build-logic/convention/build.gradle.kts
+        desktop/build.gradle.kts
+        build-logic/convention/src/main/kotlin/org/meshtastic/buildlogic/KotlinAndroid.kt
+      - >
+        sed -i 's/jvmToolchain(17)/jvmToolchain(21)/g'
+        desktop/build.gradle.kts
+        build-logic/convention/src/main/kotlin/org/meshtastic/buildlogic/KotlinAndroid.kt
       # Build!
       - ./gradlew :desktop:packageUberJarForCurrentOS
       - >
@@ -97,24 +114,15 @@ modules:
           timestamp-query: .published_at
           tag-query: .tag_name
           version-query: $tag | sub("^v"; "")
+      - type: file
+        url: https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
+        sha256: 2ab2958f2a1e51120c326cad6f385153bb11ee93b3c216c5fccebfdfbb7ec6cb
+        dest: "gradle/wrapper"
+        dest-filename: "gradle-bin.zip"
+        x-checker-data:
+          type: json
+          url: https://services.gradle.org/versions/current
+          is-main-source: false
+          version-query: .version
+          url-query: .downloadUrl
       # - flatpak-sources.json
-    modules:
-      - name: gradle
-        buildsystem: simple
-        cleanup:
-          - '*.bat'
-        sources:
-          - type: file
-            url: https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
-            dest-filename: gradle-bin.zip
-            sha256: 2ab2958f2a1e51120c326cad6f385153bb11ee93b3c216c5fccebfdfbb7ec6cb
-            x-checker-data:
-              type: json
-              url: https://services.gradle.org/versions/current
-              is-main-source: false
-              version-query: .version
-              url-query: .downloadUrl
-        build-commands:
-          - unzip -q gradle-bin.zip -d $FLATPAK_DEST
-          - mv $FLATPAK_DEST/gradle-* $FLATPAK_DEST/gradle
-          - ln -s $FLATPAK_DEST/gradle/bin/gradle $FLATPAK_DEST/bin
