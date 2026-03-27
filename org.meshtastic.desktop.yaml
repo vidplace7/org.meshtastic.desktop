@@ -3,6 +3,7 @@ runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk17
   - org.freedesktop.Sdk.Extension.openjdk21
 command: meshtastic-wrapper.sh
 
@@ -22,7 +23,7 @@ finish-args:
   # Allow bluetooth if available
   - --allow=bluetooth
   - --system-talk-name=org.bluez.*
-  # Set env for OpenJDK
+  # Set env for the bundled JBR
   - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
   - --env=JAVA_HOME=/app/jre
 
@@ -71,24 +72,13 @@ modules:
       # Disable Gradle's auto-download and auto-detect of Java installations
       - echo "org.gradle.java.installations.auto-detect=false" >> gradle.properties
       - echo "org.gradle.java.installations.auto-download=false" >> gradle.properties
+      - echo "org.gradle.java.installations.paths=/usr/lib/sdk/openjdk21/jvm/openjdk-21,/usr/lib/sdk/openjdk17/jvm/openjdk-17" >> gradle.properties
       # Comment out the toolchainVendor=JETBRAINS line in the Gradle daemon JVM properties
       # as it causes Gradle to fail when running with OpenJDK
-      - sed -i 's/^toolchainVendor=JETBRAINS/# toolchainVendor=JETBRAINS/' gradle/gradle-daemon-jvm.properties
-      # Replace all occurrences of Java 17 with Java 21
-      - sed -i 's/^toolchainVersion=17$/toolchainVersion=21/' gradle/gradle-daemon-jvm.properties
       - >
-        sed -i 's/JavaVersion\.VERSION_17/JavaVersion.VERSION_21/g'
-        build-logic/convention/build.gradle.kts
-        build-logic/convention/src/main/kotlin/org/meshtastic/buildlogic/KotlinAndroid.kt
-      - >
-        sed -i 's/JvmTarget\.JVM_17/JvmTarget.JVM_21/g'
-        build-logic/convention/build.gradle.kts
+        sed -i
+        's/^\(\s*\)vendor\.set(JvmVendorSpec\.JETBRAINS)/\1\/\/ vendor.set(JvmVendorSpec.JETBRAINS)/'
         desktop/build.gradle.kts
-        build-logic/convention/src/main/kotlin/org/meshtastic/buildlogic/KotlinAndroid.kt
-      - >
-        sed -i 's/jvmToolchain(17)/jvmToolchain(21)/g'
-        desktop/build.gradle.kts
-        build-logic/convention/src/main/kotlin/org/meshtastic/buildlogic/KotlinAndroid.kt
       # Build!
       - ./gradlew :desktop:packageUberJarForCurrentOS
       - >
@@ -105,8 +95,8 @@ modules:
         # url: https://github.com/vidplace7/Meshtastic-Android.git
         # commit: b3b2e97e911f51d5ce151527ff3316c63c3ce050
         url: https://github.com/meshtastic/Meshtastic-Android.git
-        tag: v2.7.14-closed.10
-        commit: ff6e1813ea409dd73095fdc0860a9378791a29eb
+        tag: v2.7.14-closed.11
+        commit: 69f147a1d8f128f6a373405f64abb551a5d31610
         x-checker-data:
           is-main-source: true
           type: json
