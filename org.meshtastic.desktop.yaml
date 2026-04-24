@@ -23,11 +23,13 @@ finish-args:
   # Allow bluetooth if available
   - --allow=bluetooth
   - --system-talk-name=org.bluez.*
-  # Set env for the bundled JBR
-  - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
-  - --env=JAVA_HOME=/app/jre
 
 modules:
+  - shared-modules/libappindicator/libappindicator-gtk3-12.10.json
+  # - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json
+  - shared-modules/libcanberra/libcanberra.json
+  - shared-modules/dbus-glib/dbus-glib.json
+
   - name: jbr
     buildsystem: simple
     build-commands:
@@ -44,8 +46,6 @@ modules:
         sha256: 38804f526d869f5a9c49e9b90c04edcbc918b41e8e43264e5d5076d352a959bc
         only-arches:
           - aarch64
-  - shared-modules/libappindicator/libappindicator-gtk3-12.10.json
-  # - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json
 
   - name: meshtastic-wrapper
     buildsystem: simple
