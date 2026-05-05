@@ -1,0 +1,22 @@
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index 092f6d7c2..fc627f788 100644
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -75,17 +75,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+ // Shared Develocity and Build Cache configuration
+ apply(from = "gradle/develocity.settings.gradle")
+ 
+-@Suppress("UnstableApiUsage")
+-toolchainManagement {
+-    jvm {
+-        javaRepositories {
+-            repository("foojay") {
+-                resolverClass.set(org.gradle.toolchains.foojay.FoojayToolchainResolver::class.java)
+-            }
+-        }
+-    }
+-}
+-
+ include(
+     ":core:ble",
+     ":core:common",
