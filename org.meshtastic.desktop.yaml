@@ -5,6 +5,7 @@ sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.openjdk17
   - org.freedesktop.Sdk.Extension.openjdk21
+  - org.freedesktop.Sdk.Extension.rust-stable
 command: meshtastic-wrapper.sh
 
 finish-args:
@@ -58,13 +59,17 @@ modules:
   - name: meshtastic-desktop
     buildsystem: simple
     build-options:
-      append-path: "/usr/lib/sdk/openjdk21/bin"
-      build-args:
-        # Allow internet access at build time (big no-no on FlatHub)
-        - --share=network
+      append-path: "/usr/lib/sdk/openjdk21/bin:/app/ast-grep/bin"
+      # build-args:
+      #   # Allow internet access at build time (big no-no on FlatHub)
+      #   - --share=network
       env:
         JAVA_HOME: /usr/lib/sdk/openjdk21/jvm/openjdk-21
+        # The 'Meshtastic-Android' project uses this to exclude Android/iOS targets.
+        DESKTOP_ONLY: 'true'
     build-commands:
+      # Use local gradle zip
+      - sed -i 's|distributionUrl=.*|distributionUrl=gradle-all.zip|' gradle/wrapper/gradle-wrapper.properties
       # Install desktop metadata
       - install -Dm644 -t /app/share/icons/hicolor/scalable/apps org.meshtastic.desktop.svg
       - install -Dm644 -t /app/share/applications org.meshtastic.desktop.desktop
@@ -73,14 +78,18 @@ modules:
       - echo "org.gradle.java.installations.auto-detect=false" >> gradle.properties
       - echo "org.gradle.java.installations.auto-download=false" >> gradle.properties
       - echo "org.gradle.java.installations.paths=/usr/lib/sdk/openjdk21/jvm/openjdk-21,/usr/lib/sdk/openjdk17/jvm/openjdk-17" >> gradle.properties
+      # Disable develocity
+      - sed -i '/develocity/d' settings.gradle.kts build-logic/settings.gradle.kts
       # Comment out the toolchainVendor=JETBRAINS line in the Gradle daemon JVM properties
       # as it causes Gradle to fail when running with OpenJDK
       - >
         sed -i
         's/^\(\s*\)vendor\.set(JvmVendorSpec\.JETBRAINS)/\1\/\/ vendor.set(JvmVendorSpec.JETBRAINS)/'
         desktop/build.gradle.kts
+      # Sanitize for desktop-only build
+      - ./scripts/desktop-only-prep.sh
       # Build!
-      - ./gradlew :desktop:packageUberJarForCurrentOS
+      - DESKTOP_ONLY=true ./gradlew --offline :desktop:packageUberJarForCurrentOS
       - >
         JAR_FILE=$(find desktop/build/compose/jars/ -name "*.jar" -type f | head -1)
         && install -Dm755 "$JAR_FILE" /app/lib/meshtastic-desktop.jar
@@ -92,11 +101,9 @@ modules:
       - type: file
         path: org.meshtastic.desktop.svg
       - type: git
-        # url: https://github.com/vidplace7/Meshtastic-Android.git
-        # commit: b3b2e97e911f51d5ce151527ff3316c63c3ce050
         url: https://github.com/meshtastic/Meshtastic-Android.git
-        tag: v2.7.14-closed.17
-        commit: 7ee929648cf1f589a50521360aec129212023291
+        tag: v2.7.14-internal.91
+        commit: fc8f3bff3c9e582ea1f434a760981ee523a25262
         x-checker-data:
           is-main-source: true
           type: json
@@ -104,15 +111,36 @@ modules:
           timestamp-query: .published_at
           tag-query: .tag_name
           version-query: $tag | sub("^v"; "")
+      - type: patch
+        paths:
+          - patches/remove-toolchainManagement.patch
+          - patches/remove-plugins.patch
       - type: file
-        url: https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
-        sha256: 2ab2958f2a1e51120c326cad6f385153bb11ee93b3c216c5fccebfdfbb7ec6cb
+        url: https://services.gradle.org/distributions/gradle-9.5.1-all.zip
+        sha256: c72fb9991f6025cbe337d52ba77e531b3faf62bdd3e348fe1ccee9f51c71adb0
         dest: "gradle/wrapper"
-        dest-filename: "gradle-bin.zip"
+        dest-filename: "gradle-all.zip"
         x-checker-data:
           type: json
           url: https://services.gradle.org/versions/current
           is-main-source: false
           version-query: .version
           url-query: .downloadUrl
-      # - flatpak-sources.json
+      - flatpak-sources.json
+    modules:
+      - name: ast-grep
+        buildsystem: simple
+        build-options:
+          append-path: /usr/lib/sdk/rust-stable/bin
+          env:
+            CARGO_HOME: /run/build/ast-grep/cargo
+            CARGO_NET_OFFLINE: 'true'
+            CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: gcc
+            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: gcc
+        build-commands:
+          - cargo install --locked --path crates/cli --root /app/ast-grep
+        sources:
+          - type: archive
+            url: https://github.com/ast-grep/ast-grep/archive/refs/tags/0.42.1.tar.gz
+            sha256: 3e5f6825e4ebb87d0bcd8375c4f9f0d8c158b89e96b1140035b88dc152f92999
+          - cargo-deps.json
