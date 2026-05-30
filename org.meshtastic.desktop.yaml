@@ -3,6 +3,7 @@ runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
+  # OpenJDK 17 and 21 are required at build time.
   - org.freedesktop.Sdk.Extension.openjdk17
   - org.freedesktop.Sdk.Extension.openjdk21
 command: meshtastic-wrapper.sh
@@ -28,6 +29,7 @@ finish-args:
   - --env=JAVA_HOME=/app/jre
 
 modules:
+  # Jetbrains Runtime (JBR) JRE must be used for proper window scaling, font rendering, etc.
   - name: jbr
     buildsystem: simple
     build-commands:
@@ -35,17 +37,16 @@ modules:
       - tar xzf jbr-*.tar.gz -C /app/jre --strip-components=1
     sources:
       - type: file
-        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr-21.0.10-linux-x64-b1163.105.tar.gz
-        sha256: b6a3b13451d296140727bbde9325dd9ee422e2e9b2c6a9378f346f1b8d1111bc
+        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr-21.0.11-linux-x64-b1163.116.tar.gz
+        sha256: 72bf2d1830587a3cd31b718d4af9fc7a88fc6c3740642d842b3b378d4acbe476
         only-arches:
           - x86_64
       - type: file
-        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr-21.0.10-linux-aarch64-b1163.105.tar.gz
-        sha256: 38804f526d869f5a9c49e9b90c04edcbc918b41e8e43264e5d5076d352a959bc
+        url: https://cache-redirector.jetbrains.com/intellij-jbr/jbr-21.0.11-linux-aarch64-b1163.116.tar.gz
+        sha256: 02124d01591c173f9a51ef84d99ce248900d4d1e1aa52a38c65f4708f66b6e98
         only-arches:
           - aarch64
   - shared-modules/libappindicator/libappindicator-gtk3-12.10.json
-  # - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json
 
   - name: meshtastic-wrapper
     buildsystem: simple
@@ -77,8 +78,6 @@ modules:
       - echo "org.gradle.java.installations.auto-detect=false" >> gradle.properties
       - echo "org.gradle.java.installations.auto-download=false" >> gradle.properties
       - echo "org.gradle.java.installations.paths=/usr/lib/sdk/openjdk21/jvm/openjdk-21,/usr/lib/sdk/openjdk17/jvm/openjdk-17" >> gradle.properties
-      # # Disable develocity
-      # - sed -i '/develocity/d' settings.gradle.kts build-logic/settings.gradle.kts
       # Comment out the toolchainVendor=JETBRAINS line in the Gradle daemon JVM properties
       # as it causes Gradle to fail when running with OpenJDK
       - >
