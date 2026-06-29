@@ -91,8 +91,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/meshtastic/Meshtastic-Android.git
-        tag: v2.7.14
-        commit: cf68c86af556cfd44d83064a1a03df6f63707014
+        tag: v2.8.0-closed.2
+        commit: e634e71ea78628ffa785501f2dc181265056cde1
         x-checker-data:
           is-main-source: true
           type: json
@@ -104,8 +104,8 @@ modules:
         paths:
           - patches/remove-toolchainManagement.patch
       - type: file
-        url: https://services.gradle.org/distributions/gradle-9.5.1-all.zip
-        sha256: c72fb9991f6025cbe337d52ba77e531b3faf62bdd3e348fe1ccee9f51c71adb0
+        url: https://services.gradle.org/distributions/gradle-9.6.1-all.zip
+        sha256: 61ba77b3ff7167e60962763eb4bae79db7120c189b9544358d0ade3c1e712a83
         dest: "gradle/wrapper"
         dest-filename: "gradle-all.zip"
         x-checker-data:
