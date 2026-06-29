@@ -12,7 +12,7 @@ jobs:
         arch: [x86_64, aarch64]
       fail-fast: false
     steps:
-        - uses: actions/checkout@v6
+        - uses: actions/checkout@v7
           with:
             submodules: true
         - name: Install Flatpak Builder
